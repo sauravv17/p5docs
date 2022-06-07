@@ -1,0 +1,30 @@
+## Create Kubernetes cluster in AWS using eksctl tool ##
+
+# 0. Install kubectl - 
+     curl -LO "https://dl.k8s.io/release/v1.24.0/bin/windows/amd64/kubectl.exe"
+	 add the above downloaded folder to the PATH env variable
+# 1. Install Chocolatey
+# 2. Install eksctl - choco install eksctl
+# 3. run below command
+
+# create Kubernetes cluster in AWS using eksctl tool
+eksctl create cluster ^
+--name MyFirstEKSCluster ^
+--version 1.21 ^
+--region ap-south-1 ^
+--nodegroup-name MyFirstEKSClusterNodeGroups ^
+--node-type t2.micro ^
+--nodes 2 
+
+# update kubeconfig on ur machine
+aws eks --region ap-south-1 update-kubeconfig --name MyFirstEKSCluster
+
+# test the cluster
+kubectl get nodes -o wide
+
+# Delete the kubernetes cluster in AWS
+eksctl delete cluster ^
+--name test-cluster ^
+--region us-east-1
+
+

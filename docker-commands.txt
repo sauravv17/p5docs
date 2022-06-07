@@ -1,0 +1,189 @@
+# docker commands
+
+docker run hello-world
+
+-- list all images
+docker images
+
+-- commands to list hostname and ipaddress
+ hostname
+ ifconfig
+
+-- pull images 
+ docker pull alpine
+
+-- run alpine container and list directoriers inside that 
+ docker run alpine ls -al
+
+-- list all containers 
+ docker container ps -a
+
+-- remove images
+docker image rm simple-website bitnami/jenkins ubuntu httpd alpine hello-world rmeiappan/rkwebapp dockersamples/static-site
+
+-- run a ubuntu container in interactive mode 
+docker container run -it ubuntu /bin/bash
+
+-- list of all containers and their status
+docker container ps -a
+
+-- inspecting container
+docker inspect romantic_thompson
+
+-- run container with port mapping and environment variable
+-- Port Mapping
+docker container run -d --name mystatic -e AUTHOR="RK" -p 80:80  dockersamples/static-site
+
+-- go into the container
+docker exec -it mystatic /bin/bash
+--> env  (to see the environment variables)
+
+-- Run the hello world container
+docker container run hello-world
+
+-- get the name of the container
+docker container ps -a   --> look at the last column for the name
+
+-- show the log files for the container
+docker logs <container-name>
+
+-- volume mapping - map a directory on ec2 instance into a location inside the container
+docker container run -it --name myubuntu2 -v $(pwd)/ec2hostdata:/containerdata ubuntu
+
+-- command to run jenkins
+docker container run -d --name myjenkins -p 80:8080 jenkins/jenkins:lts
+
+-- get the initial password
+docker logs myjenkins
+
+-- browse to ipaddress
+
+----------------------------------------------
+--DEPLOY SIMPLE-WEBSITE-----------------------
+----------------------------------------------
+-- To create a custom container image, use Dockerfile
+-- From the docker file you create the image using the 'docker build' command
+-- You can run your container from this custom image.
+
+-- upload your website to S3
+cd <to-your-root-foldeR>
+aws s3 sync simple-website s3://rk9876-apps/simple-website
+
+-- download website to ec2-instance
+ aws s3 sync s3://rk9876-apps/simple-website ./simple-website
+ 
+ -- Build image on EC2 instance
+ cd simple-website
+ docker build -t simple-website .
+ 
+ -- Run the simple-website container
+ docker container run -d --name mywebsite -p 80:80 simple-website
+ 
+--------------------------
+---- Build angular app ---
+--------------------------
+-- Install git on the ec2 instance
+ sudo yum install -y git
+
+-- download angular code from git repo
+ git clone https://github.com/rksljfs02/angular-demo.git
+
+-- build angular app
+ cd angular-app/my-app
+ docker build -t my-app .
+ docker container run -d -p 80:80 --name myangapp my-app
+
+-------------------------------
+--- push image to docker hub---
+-------------------------------
+
+-- tag the image with docker id
+   docker tag my-app rmeiappan/myangularapp
+
+-- list the images check if your docker id is there
+   docker images
+
+-- login to docker hub
+   docker login
+
+-- push image from your laptop to dockerhub
+   docker push rmeiappan/myangularapp
+
+-- to see the images pushed
+   login to docker hub
+
+-- run container from image that was pushed to docker hub
+   docker container run -d -p 80:80 --name myangularapp rmeiappan/myangularapp   
+
+---- command to remove images
+  docker image rm image-name   
+  
+------------------------------
+----- MYSQL + Wordpress-------
+------------------------------
+- create network
+ docker network create wordpress-network
+
+ mkdir mysql_data
+ - crete mysql container within network
+ docker container run -d --name testmysql -v $(pwd)/mysql_data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=examplerootpwd -e MYSQL_DATABASE=testdb -e MYSQL_USER=example -e MYSQL_PASSWORD=examplepwd --network wordpress-network -p 3306:3306 mysql
+  
+ - create movies table 
+ CREATE TABLE IF NOT EXISTS movies (movie_id INT AUTO_INCREMENT PRIMARY KEY,title VARCHAR(255) NOT NULL,duration INT NOT NULL,relyear VARCHAR(4) NOT NULL)  ENGINE=INNODB;
+ - insert records
+ insert into movies (title, duration, relyear) values ('Saving Private Ryan', 169, '1998');
+ insert into movies (title, duration, relyear) values ('Edge of Tomorrow', 113, '2014');
+ insert into movies (title, duration, relyear) values ('The Firm', 155, '1993');
+ insert into movies (title, duration, relyear) values ('Seven Years In Tibet', 136, '1997');
+ insert into movies (title, duration, relyear) values ('Enemy At The Gates', 131, '2001');
+ insert into movies (title, duration, relyear) values ('Moneyball', 133, '2011');
+
+-- connect from command line
+mysql -h database-1.cyiwun4turi0.us-east-1.rds.amazonaws.com -P 3306 -u admin -p
+mysql> create database moviesdb;
+$ mysql> use database_name;
+
+-- Create wordpress within network
+ docker run --name mywordpress -d -p 80:80 --network wordpress-network  wordpress
+
+-- connect via browser and connect to db
+
+--------------------------------------------------
+--------------- DOCKER COMPOSE -------------------
+--------------------------------------------------
+
+-- docker compose
+-- upload to s3
+   aws s3 sync wordpress-compose s3://rk9876-apps/wordpress-compose
+-- download to ec2
+   aws s3 sync s3://rk9876-apps/wordpress-compose wordpress-compose
+-- docker-compose commands
+   docker-compose up -d
+   docker-compose down
+   docker-compose ps -a
+   docker-compose logs
+
+--------------------------------------------------
+-------- INSTALL ANGULAR APP ---------------------
+--------------------------------------------------
+-- inside ec2 instance install git
+ sudo yum install -y git
+ git clone <your-github-url>
+ cd angular-app/my-app
+ docker build -t my-app .
+
+--- docker swarm commands
+
+- create 3 ec2 instances in same security group
+- edit that security group and allow all traffic from that same security group as source
+- install docker on all 3 ec2 instances (Note: try using userdata)
+- take any ec2 instance and call it master
+- putty into master and run this command
+   docker swarm init --advertise-addr <private-ip-of-master>
+   - the above command will return a command - copy this command and execute on both the nodes
+   docker node ls - list all nodes on swarm 
+- docker service create --name myapp1 --replicas 5 -p 80:80 my-app
+- docker service ls
+- docker service ps myapp1
+- docker service rm myapp1
+  

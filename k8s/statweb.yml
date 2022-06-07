@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: statweb
+  labels:
+    app: statweb
+    type: frontend
+spec:
+  containers:
+    - name: statweb
+      image: rmeiappan/mystaticweb

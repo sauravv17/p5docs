@@ -1,0 +1,27 @@
+Prereqs
+- Create a security group called EC2SG and assign that to your EC2 instances
+- Create a security group called EFSSG and assign it to EFS
+- Allow 'All traffic' from 'EFSSG' to 'EC2SG' and vice versa.
+	- Ensure that the security group of the EFS allows the security group of the EC2 instances on port 2049
+EC2 launch instance
+- Create couple of Amazon Linux 2 EC2 instances in EC2SG
+
+EFS Service
+- Created an EFS file system on the AWS account in EFSSG
+- Select the EFS created and click on Attach
+- Select the Mount via DNS option. If you VPC has DNS names disabled, then select mount via IP option.
+- Copy the command under the option 'Using Mount helper'
+
+- SSH into the EC2 instances
+	- Install the mount helper -> sudo yum install -y amazon-efs-utils
+	- Create a directory called efs -> sudo mkdir efs
+	- Mount your EFS -> sudo mount -t efs -o tls fs-d345566:/ efs
+	- confirm your EFS mounted -> df -h
+	
+- To mount EFS on ubuntu instances
+	- Install the mount helper -> sudo apt-get install -y nfs-common
+	- create a directory called efs -> sudo mkdir efs
+	- Mount the EFS -> 
+   sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport fs-d3e98219.efs.eu-west-1.amazonaws.com:/ efs
+   
+   
